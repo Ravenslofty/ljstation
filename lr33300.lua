@@ -77,6 +77,10 @@ local function read(self, address, size)
     end       
 end
 
+local function advance(self)
+    self.instructions_executed = self.instructions_executed + 1
+end
+
 local function write(self, address, size, data)
     assert(tonumber(address), "lr33300:write: address is not a number")
     assert(tonumber(data), "lr33300:write: data is not a number")
@@ -127,11 +131,14 @@ function decode(self, program_counter)
     local keep_decoding = true
     local branch_delay_slot = false
     local s = table.concat({[[
-        function x]], bit.tohex(program_counter), [[(self)
-        local bit = require("bit")
-        local ffi = require("ffi")
-        local band, bor = bit.band, bit.bor
-        local lshift = bit.lshift
+-- x]], bit.tohex(program_counter), [[
+
+local self = ...
+local bit = require("bit")
+local ffi = require("ffi")
+local band, bor = bit.band, bit.bor
+local lshift = bit.lshift
+return function()
     ]]})
     local decoder = interpret.new(program_counter)
 
@@ -160,9 +167,9 @@ function decode(self, program_counter)
     f:write(s)
     f:close()
 
-    assert(load(s))()
+    local func = assert(loadstring(s))(self)
 
-    self.traces[program_counter] = assert(load("return x" .. bit.tohex(program_counter) .. "(cpu)"))
+    self.traces[program_counter] = func
 
     return self.traces[program_counter]
 end
@@ -181,6 +188,7 @@ function lr33300.new(bios_filename)
 
         read = read,
         write = write,
+        advance = advance,
         traces = {}
     }
 

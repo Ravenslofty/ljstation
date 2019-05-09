@@ -555,7 +555,7 @@ function module:decode(instruction)
         ok, s = emitter(self, op, rs, rt, rd, sa, fn)
     end
 
-    s = s .. "self.instructions_executed = self.instructions_executed + 1\n"
+    s = s .. "self:advance()\n"
     return ok, s
 end
 
