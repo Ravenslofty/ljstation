@@ -122,6 +122,15 @@ function decode(self, program_counter)
     assert(self ~= nil)
     assert(tonumber(program_counter))
    
+    if DEBUG then
+        local f = io.open("blocks/" .. bit.tohex(program_counter) .. ".lua", "r")
+        if f then
+            local s = f:read("*all")
+            self.traces[program_counter] = assert(loadstring(s))(self)
+            f:close()
+        end
+    end
+
     if self.traces[program_counter] then
         return self.traces[program_counter]
     end
@@ -163,13 +172,13 @@ return function()
         "end\n"
     })
 
-    local f = io.open("blocks/" .. bit.tohex(program_counter) .. ".lua", "w")
-    f:write(s)
-    f:close()
+    if DEBUG then
+        local f = io.open("blocks/" .. bit.tohex(program_counter) .. ".lua", "w")
+        f:write(s)
+        f:close()
+    end
 
-    local func = assert(loadstring(s))(self)
-
-    self.traces[program_counter] = func
+    self.traces[program_counter] = assert(loadstring(s))(self)
 
     return self.traces[program_counter]
 end
